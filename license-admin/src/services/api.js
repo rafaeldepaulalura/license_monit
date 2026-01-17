@@ -5,8 +5,8 @@
 
 import axios from 'axios';
 
-// URL base da API (configurar no deploy)
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// URL base da API
+const API_URL = 'https://licensa-monitoramento-app.g2qdcj.easypanel.host';
 
 const api = axios.create({
   baseURL: API_URL,

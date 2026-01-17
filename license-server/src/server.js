@@ -21,8 +21,12 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // CORS - permitir acesso do painel admin e do app
+const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
+  'https://licensa-monitoramento-admin.g2qdcj.easypanel.host',
+  'http://localhost:3000'
+];
 app.use(cors({
-  origin: process.env.CORS_ORIGINS?.split(',') || '*',
+  origin: corsOrigins,
   credentials: true
 }));
 
