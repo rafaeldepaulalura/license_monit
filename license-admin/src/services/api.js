@@ -110,4 +110,26 @@ export const getPlans = async () => {
   return response.data;
 };
 
+// ==================== EMAIL TEMPLATES ====================
+
+export const getEmailTemplates = async () => {
+  const response = await api.get('/api/admin/email-templates');
+  return response.data;
+};
+
+export const getEmailTemplate = async (id) => {
+  const response = await api.get(`/api/admin/email-templates/${id}`);
+  return response.data;
+};
+
+export const updateEmailTemplate = async (id, data) => {
+  const response = await api.put(`/api/admin/email-templates/${id}`, data);
+  return response.data;
+};
+
+export const testEmailTemplate = async (id, email) => {
+  const response = await api.post(`/api/admin/email-templates/${id}/test`, { email });
+  return response.data;
+};
+
 export default api;

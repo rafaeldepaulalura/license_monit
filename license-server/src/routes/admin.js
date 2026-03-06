@@ -299,4 +299,128 @@ router.get('/plans', authenticateAdmin, async (req, res) => {
   }
 });
 
+// ==================== EMAIL TEMPLATES ====================
+
+/**
+ * GET /api/admin/email-templates
+ * Listar todos os templates de email
+ */
+router.get('/email-templates', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, subject, html_content, description, variables, active, updated_at FROM email_templates ORDER BY name'
+    );
+    res.json({ templates: result.rows });
+  } catch (error) {
+    console.error('Erro ao listar templates:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * GET /api/admin/email-templates/:id
+ * Obter um template específico
+ */
+router.get('/email-templates/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM email_templates WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Template não encontrado' });
+    }
+    res.json({ template: result.rows[0] });
+  } catch (error) {
+    console.error('Erro ao obter template:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * PUT /api/admin/email-templates/:id
+ * Atualizar template de email
+ */
+router.put('/email-templates/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { subject, html_content, active } = req.body;
+    
+    if (!subject || !html_content) {
+      return res.status(400).json({ error: 'Assunto e conteúdo HTML são obrigatórios' });
+    }
+
+    const result = await pool.query(
+      `UPDATE email_templates 
+       SET subject = $1, html_content = $2, active = $3, updated_at = NOW() 
+       WHERE id = $4
+       RETURNING *`,
+      [subject, html_content, active !== false, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Template não encontrado' });
+    }
+
+    res.json({ template: result.rows[0], message: 'Template atualizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar template:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+/**
+ * POST /api/admin/email-templates/:id/test
+ * Enviar email de teste com o template
+ */
+router.post('/email-templates/:id/test', authenticateAdmin, async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email de destino é obrigatório' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM email_templates WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Template não encontrado' });
+    }
+
+    const template = result.rows[0];
+    const emailService = require('../services/emailService');
+
+    const testVars = {
+      '{{nome}}': 'João da Silva (TESTE)',
+      '{{chave}}': 'TESTE-XXXX-XXXX-XXXX-XXXX',
+      '{{plano}}': 'Mensal',
+      '{{validade}}': new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('pt-BR'),
+      '{{email}}': email,
+      '{{motivo}}': 'Teste de template - pagamento não identificado'
+    };
+
+    let htmlContent = template.html_content;
+    for (const [key, value] of Object.entries(testVars)) {
+      htmlContent = htmlContent.split(key).join(value);
+    }
+
+    const sendResult = await emailService.sendRawEmail(
+      email,
+      `[TESTE] ${template.subject}`,
+      htmlContent
+    );
+
+    if (sendResult.success) {
+      res.json({ success: true, message: `Email de teste enviado para ${email}` });
+    } else {
+      res.status(500).json({ error: `Falha ao enviar: ${sendResult.error}` });
+    }
+  } catch (error) {
+    console.error('Erro ao enviar email de teste:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 module.exports = router;

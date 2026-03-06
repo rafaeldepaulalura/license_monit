@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Key, 
+  Mail,
   Settings, 
   LogOut,
   Shield
@@ -10,6 +11,7 @@ import {
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Licenses from './pages/Licenses';
+import EmailTemplates from './pages/EmailTemplates';
 import SettingsPage from './pages/Settings';
 
 function App() {
@@ -73,6 +75,7 @@ function App() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'licenses', label: 'Licenças', icon: Key },
+    { id: 'email-templates', label: 'Emails', icon: Mail },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
@@ -83,6 +86,8 @@ function App() {
         return <Dashboard />;
       case 'licenses':
         return <Licenses />;
+      case 'email-templates':
+        return <EmailTemplates />;
       case 'settings':
         return <SettingsPage admin={admin} />;
       default:
