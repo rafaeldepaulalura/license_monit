@@ -103,6 +103,11 @@ export const resetHardware = async (id) => {
   return response.data;
 };
 
+export const renewLicense = async (id) => {
+  const response = await api.post(`/api/admin/licenses/${id}/renew`);
+  return response.data;
+};
+
 // ==================== PLANS ====================
 
 export const getPlans = async () => {

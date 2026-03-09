@@ -119,14 +119,14 @@ class LicenseService {
       };
     }
     
-    // Verificar se expirou
-    if (license.expires_at && new Date(license.expires_at) < new Date()) {
-      return { success: false, error: 'Licença expirada', code: 'EXPIRED' };
+    // Verificar se expirou (mas se o admin renovou, o status será 'active' novamente)
+    if (license.expires_at && new Date(license.expires_at) < new Date() && license.status !== 'active') {
+      return { success: false, error: 'Licença expirada. Entre em contato com o suporte para renovar.', code: 'EXPIRED' };
     }
     
-    // Calcular data de expiração se for primeira ativação
+    // Calcular data de expiração se for primeira ativação ou se não tiver data
     let expiresAt = license.expires_at;
-    if (!expiresAt) {
+    if (!expiresAt || (new Date(expiresAt) < new Date() && license.status === 'active')) {
       const now = new Date();
       expiresAt = new Date(now.getTime() + (license.duration_days * 24 * 60 * 60 * 1000));
     }
@@ -281,6 +281,46 @@ class LicenseService {
     
     await this.logAction(licenseId, 'unblocked', { adminId }, null, null);
     
+    return result.rows[0];
+  }
+
+  /**
+   * Renovar licença expirada (estende a data de validade)
+   */
+  async renewLicense(licenseId, adminId) {
+    const licenseResult = await pool.query(`
+      SELECT l.*, p.duration_days, p.name as plan_name
+      FROM licenses l
+      JOIN plans p ON l.plan_id = p.id
+      WHERE l.id = $1
+    `, [licenseId]);
+
+    if (licenseResult.rows.length === 0) {
+      throw new Error('Licença não encontrada');
+    }
+
+    const license = licenseResult.rows[0];
+    const now = new Date();
+    const newExpiresAt = new Date(now.getTime() + (license.duration_days * 24 * 60 * 60 * 1000));
+
+    const result = await pool.query(`
+      UPDATE licenses SET
+        status = 'active',
+        expires_at = $1,
+        blocked_at = NULL,
+        blocked_reason = NULL,
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [newExpiresAt, licenseId]);
+
+    await this.logAction(licenseId, 'renewed', { 
+      adminId, 
+      previousExpiry: license.expires_at,
+      newExpiry: newExpiresAt,
+      durationDays: license.duration_days
+    }, null, null);
+
     return result.rows[0];
   }
 

@@ -269,6 +269,21 @@ router.post('/licenses/:id/unblock', authenticateAdmin, async (req, res) => {
 });
 
 /**
+ * POST /api/admin/licenses/:id/renew
+ * Renovar licença expirada (estende a data de validade)
+ */
+router.post('/licenses/:id/renew', authenticateAdmin, async (req, res) => {
+  try {
+    const license = await licenseService.renewLicense(req.params.id, req.admin.id);
+    
+    res.json({ license, message: 'Licença renovada com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao renovar licença:', error);
+    res.status(500).json({ error: error.message || 'Erro interno do servidor' });
+  }
+});
+
+/**
  * POST /api/admin/licenses/:id/reset-hardware
  * Resetar hardware ID (permitir nova ativação)
  */

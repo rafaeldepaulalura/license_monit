@@ -6,6 +6,7 @@ import {
   Ban, 
   CheckCircle, 
   RefreshCw,
+  RotateCw,
   Copy,
   X,
   Trash2,
@@ -23,6 +24,7 @@ import {
   blockLicense, 
   unblockLicense, 
   resetHardware,
+  renewLicense,
   deleteLicense,
   getPlans 
 } from '../services/api';
@@ -138,6 +140,21 @@ function Licenses() {
       }
     } catch (error) {
       alert(error.response?.data?.error || 'Erro ao resetar');
+    }
+  };
+
+  const handleRenew = async (license) => {
+    if (!window.confirm(`Deseja RENOVAR a licença ${license.license_key}? A validade será estendida pelo período do plano.`)) return;
+    
+    try {
+      await renewLicense(license.id);
+      alert('Licença renovada com sucesso! O cliente já pode ativar novamente.');
+      loadData();
+      if (showDetailModal) {
+        handleViewDetails(license);
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Erro ao renovar');
     }
   };
 
@@ -314,6 +331,15 @@ function Licenses() {
                         >
                           <Eye size={14} />
                         </button>
+                        {(license.status === 'expired') && (
+                          <button 
+                            className="btn btn-icon btn-success btn-sm"
+                            onClick={() => handleRenew(license)}
+                            title="Renovar Licença"
+                          >
+                            <RotateCw size={14} />
+                          </button>
+                        )}
                         {license.status === 'blocked' ? (
                           <button 
                             className="btn btn-icon btn-success btn-sm"
@@ -322,7 +348,7 @@ function Licenses() {
                           >
                             <CheckCircle size={14} />
                           </button>
-                        ) : (
+                        ) : license.status !== 'expired' && (
                           <button 
                             className="btn btn-icon btn-danger btn-sm"
                             onClick={() => handleBlock(license)}
@@ -573,6 +599,15 @@ function Licenses() {
               )}
             </div>
             <div className="modal-footer">
+              {selectedLicenseDetails.license.status === 'expired' && (
+                <button 
+                  className="btn btn-success"
+                  onClick={() => handleRenew(selectedLicenseDetails.license)}
+                >
+                  <RotateCw size={16} />
+                  Renovar Licença
+                </button>
+              )}
               {selectedLicenseDetails.license.hardware_id && (
                 <button 
                   className="btn btn-secondary"
