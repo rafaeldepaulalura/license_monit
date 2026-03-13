@@ -188,15 +188,28 @@ async function handlePurchaseApproved(data) {
     // Definir expiração de 30 dias
     const expiresAt = calculateExpiration(30);
     
-    await pool.query(`
-      UPDATE licenses SET
-        status = 'active',
-        expires_at = $1,
-        hotmart_subscriber_code = $2,
-        hotmart_transaction = $3,
-        updated_at = NOW()
-      WHERE id = $4
-    `, [expiresAt, subscriberCode, data.transaction, license.id]);
+    try {
+      await pool.query(`
+        UPDATE licenses SET
+          status = 'active',
+          expires_at = $1,
+          hotmart_subscriber_code = $2,
+          hotmart_transaction = $3,
+          updated_at = NOW()
+        WHERE id = $4
+      `, [expiresAt, subscriberCode, data.transaction, license.id]);
+    } catch (dbError) {
+      // Fallback se as colunas hotmart não existirem ainda
+      console.log('[Hotmart] ⚠️ Colunas hotmart não encontradas, usando update básico');
+      await pool.query(`
+        UPDATE licenses SET
+          status = 'active',
+          expires_at = $1,
+          notes = COALESCE(notes, '') || $2,
+          updated_at = NOW()
+        WHERE id = $3
+      `, [expiresAt, `\n[Hotmart] Assinatura: ${subscriberCode} | Transação: ${data.transaction}`, license.id]);
+    }
     
     await licenseService.logAction(license.id, 'hotmart_created', {
       event: 'PURCHASE_APPROVED',
@@ -359,11 +372,15 @@ async function findLicenseByEmail(email) {
 async function findLicenseByEmailOrSubscriber(email, subscriberCode) {
   // Primeiro tentar pelo subscriber code
   if (subscriberCode) {
-    const result = await pool.query(
-      'SELECT * FROM licenses WHERE hotmart_subscriber_code = $1 LIMIT 1',
-      [subscriberCode]
-    );
-    if (result.rows.length > 0) return result.rows[0];
+    try {
+      const result = await pool.query(
+        'SELECT * FROM licenses WHERE hotmart_subscriber_code = $1 LIMIT 1',
+        [subscriberCode]
+      );
+      if (result.rows.length > 0) return result.rows[0];
+    } catch (err) {
+      console.log('[Hotmart] ⚠️ Coluna hotmart_subscriber_code não existe, buscando por email');
+    }
   }
   
   // Depois tentar pelo email

@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 
 const licensesRouter = require('./routes/licenses');
 const adminRouter = require('./routes/admin');
+const hotmartRouter = require('./routes/hotmart');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,8 +31,8 @@ app.use(cors({
   credentials: true
 }));
 
-// Parse JSON
-app.use(express.json());
+// Parse JSON (limite maior para webhooks da Hotmart)
+app.use(express.json({ limit: '5mb' }));
 
 // Rate limiting para APIs públicas
 const apiLimiter = rateLimit({
@@ -57,6 +58,9 @@ app.get('/health', (req, res) => {
 // API de licenças (para o app desktop)
 app.use('/api/licenses', apiLimiter, licensesRouter);
 app.post('/api/licenses/activate', activationLimiter);
+
+// Webhook Hotmart (sem rate limit - a Hotmart precisa enviar livremente)
+app.use('/api/webhooks/hotmart', hotmartRouter);
 
 // API administrativa (para o painel)
 app.use('/api/admin', adminRouter);
@@ -85,6 +89,7 @@ app.listen(PORT, () => {
   console.log('║  - GET  /health              - Health check           ║');
   console.log('║  - POST /api/licenses/activate - Ativar licença       ║');
   console.log('║  - POST /api/licenses/validate - Validar licença      ║');
+  console.log('║  - POST /api/webhooks/hotmart - Webhook Hotmart        ║');
   console.log('║  - POST /api/admin/login     - Login admin            ║');
   console.log('║  - GET  /api/admin/licenses  - Listar licenças        ║');
   console.log('╚═══════════════════════════════════════════════════════╝');

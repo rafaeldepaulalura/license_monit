@@ -1,0 +1,97 @@
+{
+  "name": "licitante-prime",
+  "version": "4.1.0",
+  "description": "Monitoramento de Chat do Comprasnet - Licitante Prime",
+  "main": "main.js",
+  "homepage": "./",
+  "author": {
+    "name": "Licitante Prime",
+    "email": "contato@licitanteprime.com.br"
+  },
+  "scripts": {
+    "react-start": "react-scripts start",
+    "react-build": "react-scripts build",
+    "electron": "electron .",
+    "dev": "concurrently \"cross-env BROWSER=none npm run react-start\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run react-build && electron-builder",
+    "build:win": "npm run react-build && electron-builder --win",
+    "dist": "npm run react-build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "lucide-react": "^0.363.0",
+    "electron-store": "^8.2.0",
+    "uuid": "^9.0.1",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "cross-env": "^7.0.3"
+  },
+  "browserslist": {
+    "production": [
+      "last 1 electron version"
+    ],
+    "development": [
+      "last 1 electron version"
+    ]
+  },
+  "build": {
+    "appId": "com.licitanteprime.monitor",
+    "productName": "Monitoramento de Chat - Licitante Prime",
+    "copyright": "Copyright © 2026 Licitante Prime",
+    "extends": null,
+    "directories": {
+      "output": "dist",
+      "buildResources": "public"
+    },
+    "files": [
+      "build/**/*",
+      "main.js",
+      "preload.js",
+      "onlineLicense.js",
+      "telegramNotifier.js",
+      "src/utils/**/*",
+      "node_modules/**/*",
+      "!node_modules/*/{CHANGELOG.md,README.md,readme.md,readme}",
+      "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!node_modules/.cache/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "tools",
+        "to": "tools",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Monitoramento de Chat - Licitante Prime",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "installerLanguages": ["pt_BR", "en_US"],
+      "language": "1046"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    }
+  }
+}
